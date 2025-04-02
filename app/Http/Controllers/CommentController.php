@@ -8,12 +8,13 @@ use App\Models\Post;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Gate;
 
 class CommentController extends Controller implements HasMiddleware
 {
     public static function middleware() {
         return [
-            new Middleware('auth:sanctum')
+            new Middleware('auth:sanctum', except: ['show', 'index'])
         ];
     }
 
@@ -23,7 +24,7 @@ class CommentController extends Controller implements HasMiddleware
             'body' => 'required|string|max:1000',
         ]);
 
-        $post = Post::find($post->id); // Get the post to comment on
+        // $post = Post::find($post->id); // Get the post to comment on
 
         // Create the comment
         $comment = new Comment();
@@ -33,5 +34,24 @@ class CommentController extends Controller implements HasMiddleware
         $comment->save();
 
         return ['success' => 'Comment added successfully!'];
+    }
+
+    public function show(Post $post)
+    {
+        return $post->comments()->get();
+    }
+    public function index()
+    {
+        return Comment::all();
+    }
+
+    public function delete(Post $post, Comment $comment)
+    {
+        Gate::authorize('delete', $comment);
+
+        // Delete the comment
+        $comment->delete();
+
+        return ['message' => 'comment has been deleted'];
     }
 }
